@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مختبر الفيزياء التفاعلي - محاكاة العدسات</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-color: #f4f7f6;
+            text-align: center;
+        }
+        h1 { color: #2c3e50; font-size: 1.5rem; margin-bottom: 5px; }
+        p { color: #555; font-size: 0.9rem; margin-top: 0; }
+        .controls {
+            background: white; padding: 15px; border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px;
+            display: inline-block; width: 90%; max-width: 500px;
+        }
+        .control-group { margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+        input[type=range] { width: 60%; }
+        #canvas-container {
+            background: white; border-radius: 10px; padding: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: inline-block;
+            width: 100%; max-width: 600px; overflow-x: auto;
+        }
+        canvas { background: #fafafa; border: 1px solid #ddd; display: block; margin: 0 auto; }
+        .info-panel {
+            background: #eef2f3; border-right: 5px solid #3498db;
+            padding: 10px; margin-top: 10px; border-radius: 4px;
+            text-align: right; font-size: 0.9rem; display: inline-block; width: 90%; max-width: 500px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>مختبر الفيزياء التفاعلي 🔬</h1>
+    <p>محاكاة بصرية تفاعلية لتكوين الصور في العدسة المحدبة</p>
+
+    <div class="controls">
+        <div class="control-group">
+            <label>بعد الجسم عن العدسة (do):</label>
+            <input type="range" id="objDist" min="30" max="250" value="120">
+            <span id="objDistVal">120</span>
+        </div>
+        <div class="control-group">
+            <label>البعد البؤري للعدسة (f):</label>
+            <input type="range" id="focalLength" min="40" max="100" value="60">
+            <span id="focalLengthVal">60</span>
+        </div>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="lensCanvas" width="550" height="300"></canvas>
+    </div>
+
+    <div class="info-panel" id="infoPanel">
+        <strong>خصائص الصورة المتكونة:</strong> جاري الحساب...
+    </div>
+
+    <script>
+        const canvas = document.getElementById('lensCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const objDistInput = document.getElementById('objDist');
+        const focalInput = document.getElementById('focalLength');
+        const objDistVal = document.getElementById('objDistVal');
+        const focalVal = document.getElementById('focalLengthVal');
+        const infoPanel = document.getElementById('infoPanel');
+
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const objHeight = 50;
+
+        function drawSimulation() {
+            const do_val = parseFloat(objDistInput.value);
+            const f = parseFloat(focalInput.value);
+
+            objDistVal.innerText = do_val;
+            focalVal.innerText = f;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. رسم المحور الأساسي
+            ctx.beginPath();
+            ctx.strokeStyle = '#95a5a6';
+            ctx.lineWidth = 1;
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(canvas.width, centerY);
+            ctx.stroke();
+
+            // 2. رسم العدسة المحدبة
+            ctx.beginPath();
+            ctx.strokeStyle = '#3498db';
+            ctx.lineWidth = 4;
+            ctx.moveTo(centerX, centerY - 100);
+            ctx.lineTo(centerX, centerY + 100);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.arc(centerX - 80, centerY, 128, -Math.PI/6, Math.PI/6);
+            ctx.arc(centerX + 80, centerY, 128, Math.PI - Math.PI/6, Math.PI + Math.PI/6);
+            ctx.fillStyle = 'rgba(52, 152, 219, 0.1)';
+            ctx.fill();
+
+            // 3. رسم البؤر
+            const points = [
+                { x: centerX - f, label: 'F' },
+                { x: centerX - 2*f, label: '2F' },
+                { x: centerX + f, label: 'F' },
+                { x: centerX + 2*f, label: '2F' }
+            ];
+            ctx.fillStyle = '#e74c3c';
+            ctx.font = '12px Arial';
+            points.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, centerY, 4, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.fillText(p.label, p.x - 5, centerY + 20);
+            });
+
+            // 4. رسم الجسم
+            const objX = centerX - do_val;
+            ctx.beginPath();
+            ctx.strokeStyle = '#2c3e50';
+            ctx.lineWidth = 5;
+            ctx.moveTo(objX, centerY);
+            ctx.lineTo(objX, centerY - objHeight);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(objX - 5, centerY - objHeight + 10);
+            ctx.lineTo(objX, centerY - objHeight);
+            ctx.lineTo(objX + 5, centerY - objHeight + 10);
+            ctx.stroke();
+
+            // 5. الحسابات الفيزيائية
+            let di = (f * do_val) / (do_val - f);
+            let magnification = -di / do_val;
+            let imgHeight = objHeight * magnification;
+            let imgX = centerX + di;
+
+            if (do_val === f) {
+                infoPanel.innerHTML = "<strong>خصائص الصورة المتكونة:</strong> الجسم يقع عند البؤرة تماماً، الأشعة تخرج متوازية ولن تتكون صورة (في اللانهاية).";
+            } else if (do_val < f) {
+                infoPanel.innerHTML = `<strong>خصائص الصورة المتكونة:</strong> الصورة <strong>تقديرية (وهمية)، معتدلة، ومكبرة</strong> وتتكون خلف الجسم.`;
+                
+                ctx.setLineDash();
+                ctx.beginPath();
+                ctx.strokeStyle = 'rgba(231, 76, 60, 0.5)';
+                ctx.moveTo(objX, centerY - objHeight);
+                ctx.lineTo(imgX, centerY + imgHeight);
+                ctx.stroke();
+                ctx.setLineDash();
+            } else {
+                let sizeText = Math.abs(magnification) > 1 ? "مكبرة" : (Math.abs(magnification) < 1 ? "مصغرة" : "مساوية لحجم الجسم");
+                infoPanel.innerHTML = `<strong>خصائص الصورة المتكونة:</strong> الصورة <strong>حقيقية، مقلوبة، و ${sizeText}</strong>.`;
+
+                // رسم الأشعة
+                ctx.beginPath();
+                ctx.strokeStyle = '#e67e22';
+                ctx.moveTo(objX, centerY - objHeight);
+                ctx.lineTo(centerX, centerY - objHeight);
+                ctx.lineTo(imgX, centerY + imgHeight);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.strokeStyle = '#2ecc71';
+                ctx.moveTo(objX, centerY - objHeight);
+                ctx.lineTo(imgX, centerY + imgHeight);
+                ctx.stroke();
+
+                // رسم الصورة
+                ctx.beginPath();
+                ctx.strokeStyle = '#e74c3c';
+                ctx.lineWidth = 4;
+                ctx.moveTo(imgX, centerY);
+                ctx.lineTo(imgX, centerY + imgHeight);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                let arrowTipY = centerY + imgHeight;
+                let arrowBaseY = imgHeight > 0 ? arrowTipY - 10 : arrowTipY + 10;
+                ctx.moveTo(imgX - 5, arrowBaseY);
+                ctx.lineTo(imgX, arrowTipY);
+                ctx.lineTo(imgX + 5, arrowBaseY);
+                ctx.stroke();
+            }
+        }
+
+        objDistInput.addEventListener('input', drawSimulation);
+        focalInput.addEventListener('input', drawSimulation);
+        drawSimulation();
+    </script>
+</body>
+</html>
