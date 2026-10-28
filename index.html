@@ -1,198 +1,53 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مختبر الفيزياء التفاعلي - محاكاة العدسات</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 10px;
-            background-color: #f4f7f6;
-            text-align: center;
-        }
-        h1 { color: #2c3e50; font-size: 1.5rem; margin-bottom: 5px; }
-        p { color: #555; font-size: 0.9rem; margin-top: 0; }
-        .controls {
-            background: white; padding: 15px; border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px;
-            display: inline-block; width: 90%; max-width: 500px;
-        }
-        .control-group { margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
-        input[type=range] { width: 60%; }
-        #canvas-container {
-            background: white; border-radius: 10px; padding: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: inline-block;
-            width: 100%; max-width: 600px; overflow-x: auto;
-        }
-        canvas { background: #fafafa; border: 1px solid #ddd; display: block; margin: 0 auto; }
-        .info-panel {
-            background: #eef2f3; border-right: 5px solid #3498db;
-            padding: 10px; margin-top: 10px; border-radius: 4px;
-            text-align: right; font-size: 0.9rem; display: inline-block; width: 90%; max-width: 500px;
-        }
-    </style>
-</head>
-<body>
-
-    <h1>مختبر الفيزياء التفاعلي 🔬</h1>
-    <p>محاكاة بصرية تفاعلية لتكوين الصور في العدسة المحدبة</p>
-
-    <div class="controls">
-        <div class="control-group">
-            <label>بعد الجسم عن العدسة (do):</label>
-            <input type="range" id="objDist" min="30" max="250" value="120">
-            <span id="objDistVal">120</span>
-        </div>
-        <div class="control-group">
-            <label>البعد البؤري للعدسة (f):</label>
-            <input type="range" id="focalLength" min="40" max="100" value="60">
-            <span id="focalLengthVal">60</span>
-        </div>
-    </div>
-
-    <div id="canvas-container">
-        <canvas id="lensCanvas" width="550" height="300"></canvas>
-    </div>
-
-    <div class="info-panel" id="infoPanel">
-        <strong>خصائص الصورة المتكونة:</strong> جاري الحساب...
-    </div>
-
-    <script>
-        const canvas = document.getElementById('lensCanvas');
-        const ctx = canvas.getContext('2d');
-
-        const objDistInput = document.getElementById('objDist');
-        const focalInput = document.getElementById('focalLength');
-        const objDistVal = document.getElementById('objDistVal');
-        const focalVal = document.getElementById('focalLengthVal');
-        const infoPanel = document.getElementById('infoPanel');
-
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        const objHeight = 50;
-
-        function drawSimulation() {
-            const do_val = parseFloat(objDistInput.value);
-            const f = parseFloat(focalInput.value);
-
-            objDistVal.innerText = do_val;
-            focalVal.innerText = f;
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // 1. رسم المحور الأساسي
-            ctx.beginPath();
-            ctx.strokeStyle = '#95a5a6';
-            ctx.lineWidth = 1;
-            ctx.moveTo(0, centerY);
-            ctx.lineTo(canvas.width, centerY);
-            ctx.stroke();
-
-            // 2. رسم العدسة المحدبة
-            ctx.beginPath();
-            ctx.strokeStyle = '#3498db';
-            ctx.lineWidth = 4;
-            ctx.moveTo(centerX, centerY - 100);
-            ctx.lineTo(centerX, centerY + 100);
-            ctx.stroke();
-            
-            ctx.beginPath();
-            ctx.arc(centerX - 80, centerY, 128, -Math.PI/6, Math.PI/6);
-            ctx.arc(centerX + 80, centerY, 128, Math.PI - Math.PI/6, Math.PI + Math.PI/6);
-            ctx.fillStyle = 'rgba(52, 152, 219, 0.1)';
-            ctx.fill();
-
-            // 3. رسم البؤر
-            const points = [
-                { x: centerX - f, label: 'F' },
-                { x: centerX - 2*f, label: '2F' },
-                { x: centerX + f, label: 'F' },
-                { x: centerX + 2*f, label: '2F' }
-            ];
-            ctx.fillStyle = '#e74c3c';
-            ctx.font = '12px Arial';
-            points.forEach(p => {
-                ctx.beginPath();
-                ctx.arc(p.x, centerY, 4, 0, 2 * Math.PI);
-                ctx.fill();
-                ctx.fillText(p.label, p.x - 5, centerY + 20);
-            });
-
-            // 4. رسم الجسم
-            const objX = centerX - do_val;
-            ctx.beginPath();
-            ctx.strokeStyle = '#2c3e50';
-            ctx.lineWidth = 5;
-            ctx.moveTo(objX, centerY);
-            ctx.lineTo(objX, centerY - objHeight);
-            ctx.stroke();
-            
-            ctx.beginPath();
-            ctx.moveTo(objX - 5, centerY - objHeight + 10);
-            ctx.lineTo(objX, centerY - objHeight);
-            ctx.lineTo(objX + 5, centerY - objHeight + 10);
-            ctx.stroke();
-
-            // 5. الحسابات الفيزيائية
-            let di = (f * do_val) / (do_val - f);
-            let magnification = -di / do_val;
-            let imgHeight = objHeight * magnification;
-            let imgX = centerX + di;
-
-            if (do_val === f) {
-                infoPanel.innerHTML = "<strong>خصائص الصورة المتكونة:</strong> الجسم يقع عند البؤرة تماماً، الأشعة تخرج متوازية ولن تتكون صورة (في اللانهاية).";
-            } else if (do_val < f) {
-                infoPanel.innerHTML = `<strong>خصائص الصورة المتكونة:</strong> الصورة <strong>تقديرية (وهمية)، معتدلة، ومكبرة</strong> وتتكون خلف الجسم.`;
-                
-                ctx.setLineDash();
-                ctx.beginPath();
-                ctx.strokeStyle = 'rgba(231, 76, 60, 0.5)';
-                ctx.moveTo(objX, centerY - objHeight);
-                ctx.lineTo(imgX, centerY + imgHeight);
-                ctx.stroke();
-                ctx.setLineDash();
-            } else {
-                let sizeText = Math.abs(magnification) > 1 ? "مكبرة" : (Math.abs(magnification) < 1 ? "مصغرة" : "مساوية لحجم الجسم");
-                infoPanel.innerHTML = `<strong>خصائص الصورة المتكونة:</strong> الصورة <strong>حقيقية، مقلوبة، و ${sizeText}</strong>.`;
-
-                // رسم الأشعة
-                ctx.beginPath();
-                ctx.strokeStyle = '#e67e22';
-                ctx.moveTo(objX, centerY - objHeight);
-                ctx.lineTo(centerX, centerY - objHeight);
-                ctx.lineTo(imgX, centerY + imgHeight);
-                ctx.stroke();
-
-                ctx.beginPath();
-                ctx.strokeStyle = '#2ecc71';
-                ctx.moveTo(objX, centerY - objHeight);
-                ctx.lineTo(imgX, centerY + imgHeight);
-                ctx.stroke();
-
-                // رسم الصورة
-                ctx.beginPath();
-                ctx.strokeStyle = '#e74c3c';
-                ctx.lineWidth = 4;
-                ctx.moveTo(imgX, centerY);
-                ctx.lineTo(imgX, centerY + imgHeight);
-                ctx.stroke();
-                
-                ctx.beginPath();
-                let arrowTipY = centerY + imgHeight;
-                let arrowBaseY = imgHeight > 0 ? arrowTipY - 10 : arrowTipY + 10;
-                ctx.moveTo(imgX - 5, arrowBaseY);
-                ctx.lineTo(imgX, arrowTipY);
-                ctx.lineTo(imgX + 5, arrowBaseY);
-                ctx.stroke();
-            }
-        }
-
-        objDistInput.addEventListener('input', drawSimulation);
-        focalInput.addEventListener('input', drawSimulation);
-        drawSimulation();
-    </script>
-</body>
-</html>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>مختبر العدسات الافتراضي | الفيزياء 3</title>
+<style>
+:root{font-family:system-ui,Tahoma,Arial,sans-serif;color:#233449;background:#f3f7fa}*{box-sizing:border-box}body{margin:0;padding:18px}main{max-width:1000px;margin:auto}header{text-align:center;padding:12px}h1{font-size:clamp(1.5rem,4vw,2.3rem);margin:8px 0;color:#203d63}header p{color:#596b7a}.panel{background:white;border-radius:18px;padding:18px;margin:16px 0;box-shadow:0 5px 20px #18324a13}.switch{display:flex;gap:8px;flex-wrap:wrap}.switch button{border:1px solid #b8cbe0;background:white;border-radius:12px;padding:12px 20px;font:inherit;cursor:pointer}.switch button.active{background:#215f9c;color:white}.controls{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:600px){.controls{grid-template-columns:1fr}}label{display:block;font-weight:650;margin-bottom:8px}input[type=range]{width:100%;accent-color:#236ab0}.value{font-variant-numeric:tabular-nums;color:#17649c;font-weight:bold}.scene{overflow:hidden}svg{display:block;width:100%;height:auto;background:#fbfdff;border:1px solid #e4edf5;border-radius:12px;touch-action:pan-y}.results{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}.metric{background:#f1f7fd;border-radius:12px;padding:12px}.metric small{display:block;color:#60758b}.metric strong{display:block;margin-top:5px;font-size:1.05rem}.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.88rem;margin:12px 0}.dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-left:5px}.note{color:#516575;line-height:1.8}.activity{border-right:4px solid #2b78b6;padding:4px 14px;background:#f5faff;border-radius:6px}footer{text-align:center;color:#6c7b88;font-size:.8rem;margin:25px}button:focus-visible,input:focus-visible{outline:3px solid #f1a83c;outline-offset:2px}
+</style></head>
+<body><main>
+<header><h1>🔬 مختبر العدسات الافتراضي</h1><p>الفيزياء 3 | استكشاف تكوّن الصور في العدسات الرقيقة</p></header>
+<section class="panel"><div class="switch" aria-label="نوع العدسة"><button id="convex" class="active" aria-pressed="true">العدسة المحدبة (المجمّعة)</button><button id="concave" aria-pressed="false">العدسة المقعرة (المفرّقة)</button></div><div class="controls" style="margin-top:18px"><div><label for="distance">بعد الجسم عن العدسة: <span class="value" id="distanceValue">120</span></label><input id="distance" type="range" min="20" max="250" value="120" step="1"></div><div><label for="focal">مقدار البعد البؤري: <span class="value" id="focalValue">60</span></label><input id="focal" type="range" min="30" max="100" value="60" step="1"></div></div></section>
+<section class="panel scene"><svg id="diagram" viewBox="0 0 900 470" role="img" aria-label="رسم تفاعلي لمسارات الأشعة وتكوّن الصورة في العدسة"></svg><div class="legend"><span><i class="dot" style="background:#ed9236"></i>شعاع موازٍ للمحور</span><span><i class="dot" style="background:#27a66a"></i>شعاع يمر بالمركز البصري</span><span><i class="dot" style="background:#8d5bd2"></i>الشعاع الثالث</span><span>┄ امتداد وهمي متقطع</span></div><p class="note">الخطوط الملونة تمثل الأشعة الضوئية، والخطوط المتقطعة تمثل امتداداتها الهندسية. الرسم يتكيف مع مجال الرؤية، والأبعاد الحسابية موضحة أدناه.</p></section>
+<section class="panel"><h2 style="margin-top:0">نتائج التجربة</h2><div class="results"><div class="metric"><small>بعد الصورة (dᵢ)</small><strong id="di">—</strong></div><div class="metric"><small>التكبير (m)</small><strong id="mag">—</strong></div><div class="metric"><small>نوع الصورة</small><strong id="kind">—</strong></div><div class="metric"><small>اتجاه الصورة</small><strong id="orientation">—</strong></div><div class="metric"><small>حجم الصورة</small><strong id="size">—</strong></div><div class="metric"><small>موضع الصورة</small><strong id="position">—</strong></div></div><p class="note" id="explanation"></p></section>
+<section class="panel activity"><h2>نشاط استقصائي للطالبة</h2><p>توقعي نوع الصورة واتجاهها وحجمها عندما ينتقل الجسم من خارج 2F إلى ما بين F والعدسة. غيّري موضع الجسم، ثم قارني توقعك بالنتائج، وسجّلي تفسيرك اعتمادًا على مسارات الأشعة.</p></section><footer>محاكاة تعليمية وفق نموذج العدسة الرقيقة المثالية، وليست تتبعًا بصريًا لعدسة سميكة.</footer>
+</main>
+<script>
+const svg=document.getElementById('diagram'),distance=document.getElementById('distance'),focal=document.getElementById('focal');let type='convex';
+const NS='http://www.w3.org/2000/svg';
+function node(tag,attrs={},parent=svg,text){const el=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,v);if(text!==undefined)el.textContent=text;parent.appendChild(el);return el}
+function line(x1,y1,x2,y2,color='#75889a',width=2,dash=''){if(![x1,y1,x2,y2].every(Number.isFinite))return;node('line',{x1,y1,x2,y2,stroke:color,'stroke-width':width,'stroke-dasharray':dash,'stroke-linecap':'round'})}
+function label(x,y,t,color='#455e76',size=15){node('text',{x,y,fill:color,'font-size':size,'text-anchor':'middle','font-family':'Arial,sans-serif'},svg,t)}
+function arrow(x,base,tip,color){line(x,base,x,tip,color,5);const dir=Math.sign(tip-base)||-1;node('path',{d:`M ${x-8} ${tip-dir*12} L ${x} ${tip} L ${x+8} ${tip-dir*12}`,fill:'none',stroke:color,'stroke-width':5,'stroke-linejoin':'round'})}
+function render(){const d=+distance.value,F=+focal.value,f=type==='convex'?F:-F,atFocus=type==='convex'&&d===F,di=atFocus?Infinity:f*d/(d-f),m=atFocus?NaN:-di/d;
+document.getElementById('distanceValue').textContent=d;document.getElementById('focalValue').textContent=F;
+const finite=Number.isFinite(di),real=finite&&di>0,virtual=finite&&di<0,scale=Math.min(1.75,365/Math.max(d,2*F,finite?Math.abs(di):0)),cx=450,cy=235,h=55,ox=cx-d*scale,oy=cy-h*scale,ix=cx+di*scale,iy=cy-m*h*scale;
+svg.replaceChildren();line(20,cy,880,cy,'#97a9b7',2);const defs=node('defs');const clip=node('clipPath',{id:'sceneClip'},defs);node('rect',{x:12,y:12,width:876,height:445},clip);const rays=node('g',{'clip-path':'url(#sceneClip)'});
+const lensPath=type==='convex'?`M ${cx-13} 100 Q ${cx-70} ${cy} ${cx-13} 370 L ${cx+13} 370 Q ${cx+70} ${cy} ${cx+13} 100 Z`:`M ${cx-34} 100 Q ${cx-2} ${cy} ${cx-34} 370 L ${cx+34} 370 Q ${cx+2} ${cy} ${cx+34} 100 Z`;
+node('path',{d:lensPath,fill:'#b7e2f4','fill-opacity':'.48',stroke:'#4c9bc7','stroke-width':2});line(cx,100,cx,370,'#2879b4',2);label(cx+17,95,'O','#2879b4');
+for(const s of [-1,1])for(const mult of [1,2]){const x=cx+s*mult*F*scale;node('circle',{cx:x,cy,r:4,fill:'#d95c4c'});label(x,cy+23,mult===1?'F':'2F','#b94e44',15)}
+const color1='#ed9236',color2='#27a66a',color3='#8d5bd2';
+// All ray geometry is computed from the ideal thin-lens equation.
+function ray(x1,y1,x2,y2,c,dash=''){line(x1,y1,x2,y2,c,3,dash)}
+// Ray 1: parallel before the lens, through the far focus (or diverges as if from near focus).
+ray(ox,oy,cx,oy,color1);
+const slope1=-h/f;const endpointX=880;ray(cx,oy,endpointX,oy+slope1*(endpointX-cx),color1);
+if(virtual){ray(cx,oy,ix,iy,color1,'7 6')}
+// Ray 2: central ray, undeviated.
+const centralSlope=-h/d;ray(ox,oy,cx,cy,color2);ray(cx,cy,880,cy+centralSlope*(880-cx),color2);if(virtual)ray(cx,cy,ix,iy,color2,'7 6');
+// Ray 3: incident ray aimed through the near focal point, emerges parallel.
+// When d=f (convex), this construction is degenerate, so omit the third ray.
+if(!(type==='convex'&&d===F)){
+ const nearF=-f;const intercept=h*nearF/(d+nearF);const yLens=cy-intercept*scale;
+ if(Number.isFinite(yLens)&&Math.abs(yLens)<3000){ray(ox,oy,cx,yLens,color3);ray(cx,yLens,880,yLens,color3);if(virtual)ray(cx,yLens,ix,iy,color3,'7 6')}
+}
+arrow(ox,cy,oy,'#263d57');label(ox,cy+42,'الجسم','#263d57');
+if(finite){arrow(ix,cy,iy,'#d94b56');label(Math.max(42,Math.min(858,ix)),iy<cy?iy-15:iy+25,'الصورة','#c23d4a')}
+const kind=atFocus?'عند اللانهاية':real?'حقيقية':'وهمية';const orientation=atFocus?'—':m<0?'مقلوبة':'معتدلة';const sz=atFocus?'—':Math.abs(Math.abs(m)-1)<.00001?'مساوية للجسم':Math.abs(m)>1?'مكبرة':'مصغرة';
+const pos=atFocus?'عند اللانهاية':real?'على الجانب الآخر من العدسة':'على جانب الجسم';
+for(const [id,value] of Object.entries({di:atFocus?'∞':di.toFixed(2),mag:atFocus?'غير محدد':m.toFixed(2),kind,orientation,size:sz,position:pos}))document.getElementById(id).textContent=value;
+document.getElementById('explanation').textContent=atFocus?'عندما يقع الجسم عند بؤرة العدسة المحدبة، تخرج الأشعة متوازية ولا تتكون صورة على مسافة محدودة.':`الصورة ${kind}، ${orientation}، ${sz}. ${real?'تتقاطع الأشعة المنكسرة فعليًا على الجانب الآخر من العدسة.':'تتقاطع الامتدادات الخلفية للأشعة المنكسرة على جانب الجسم.'} البعد البؤري الموقع: ${f}.`;
+}
+document.getElementById('convex').onclick=()=>setType('convex');document.getElementById('concave').onclick=()=>setType('concave');function setType(t){type=t;for(const id of ['convex','concave']){const active=id===t;document.getElementById(id).classList.toggle('active',active);document.getElementById(id).setAttribute('aria-pressed',String(active))}render()};distance.addEventListener('input',render);focal.addEventListener('input',render);render();
+</script></body></html>
