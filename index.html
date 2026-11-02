@@ -7,7 +7,7 @@ function text(x,y,s,color='#46576b',size=15){return `<text x="${x}" y="${y}" fil
 function rayFromLens(x0,y0,slope,color,dashed=false,back=false){const tx=back?0:W,ty=y0+slope*(tx-x0);return line(x0,y0,tx,ty,color,dashed)}
 function draw(){const d=+dist.value,f=+focal.value,ff=type==='convex'?f:-f,ox=cx-d*S,oy=cy-H,eps=1e-9;document.getElementById('dOut').textContent=d;document.getElementById('fOut').textContent=f;document.getElementById('convex').classList.toggle('active',type==='convex');document.getElementById('concave').classList.toggle('active',type==='concave');let out=line(0,cy,W,cy,'#9aaaba',false,1.7);for(let side of [-1,1])for(let n of [1,2]){const x=cx+side*n*f*S;if(x>12&&x<W-12){out+=`<circle cx="${x}" cy="${cy}" r="4" fill="#d95c58"/>`+text(x,cy+23,n===1?'F':'2F','#b34b48',13)}}
 // Convex: wider in the centre; concave: thinner in the centre.
-let lensPath=type==='convex'?`M 388 105 Q 440 225 388 345 L 412 345 Q 360 225 412 105 Z`:`M 375 105 Q 425 225 375 345 L 425 345 Q 375 225 425 105 Z`;
+let lensPath=type==='convex'?`M 394 105 Q 367 225 394 345 Q 400 351 406 345 Q 433 225 406 105 Q 400 99 394 105 Z`:`M 380 105 Q 401 225 380 345 Q 400 351 420 345 Q 399 225 420 105 Q 400 99 380 105 Z`;
 out+=`<path d="${lensPath}" fill="#a9dcf8" fill-opacity=".45" stroke="#3489c8" stroke-width="2.5"/>`+line(cx,100,cx,350,'#3374ad',false,1.3)+text(cx+17,95,'O','#3374ad');
 // object arrow
 out+=line(ox,cy,ox,oy,'#263c5b',false,5)+`<path d="M ${ox-8} ${oy+13} L ${ox} ${oy} L ${ox+8} ${oy+13}" fill="none" stroke="#263c5b" stroke-width="4"/>`+text(ox,cy+38,'الجسم');
@@ -17,7 +17,7 @@ out+=line(ox,oy,cx,oy,'#e38b26');out+=rayFromLens(cx,oy,H/(ff*S),'#e38b26');if(t
 // ray 2: central, straight
 out+=line(ox,oy,cx,cy,'#269c6b');out+=rayFromLens(cx,cy,H/(d*S),'#269c6b');if(type==='concave')out+=line(cx,cy,ix,iy,'#269c6b',true,2);
 // ray 3: from object towards front focus, then parallel to axis; for concave aimed towards far focus
-const slope3=type==='convex'?H/((d-f)*S):H/((d+f)*S);if(!isInf){const lensY=oy+slope3*(cx-ox);out+=line(ox,oy,cx,lensY,'#8a58d3');out+=rayFromLens(cx,lensY,0,'#8a58d3');if(di<0)out+=line(cx,lensY,ix,iy,'#8a58d3',true,2)}
+const slope3=type==='convex'?-H/((d-f)*S):-H/((d+f)*S);if(!isInf){const lensY=oy+slope3*(cx-ox);out+=line(ox,oy,cx,lensY,'#8a58d3');out+=rayFromLens(cx,lensY,0,'#8a58d3');if(di<0)out+=line(cx,lensY,ix,iy,'#8a58d3',true,2)}
 if(!isInf&&Number.isFinite(ix)){if(ix>=0&&ix<=W){const virtual=di<0;out+=line(ix,cy,ix,iy,'#d94f60',virtual,5);const a=m>=0?-1:1;out+=`<path d="M ${ix-8} ${iy-a*13} L ${ix} ${iy} L ${ix+8} ${iy-a*13}" fill="none" stroke="#d94f60" stroke-width="4" ${virtual?'stroke-dasharray="5 4"':''}/>`+text(ix,iy+(m>=0?-14:23),'الصورة','#c34b59')}}else out+=text(680,420,'الصورة خارج مجال الرسم','#b54c5a',16)}
 svg.innerHTML=out;let description;if(isInf){description='الجسم عند البؤرة؛ الأشعة الخارجة متوازية، والصورة عند اللانهاية.'}else{const kind=di>0?'حقيقية':'وهمية (تقديرية)',orient=m<0?'مقلوبة':'معتدلة',size=Math.abs(m)>1+eps?'مكبّرة':Math.abs(m)<1-eps?'مصغّرة':'مساوية لحجم الجسم';description=`الصورة ${kind}، ${orient}، ${size}.`}
 document.getElementById('results').innerHTML=`<strong>${description}</strong><div>بُعد الصورة (dᵢ): ${isInf?'∞':di.toFixed(1)} وحدة</div><div>التكبير (m): ${isInf?'غير محدود':m.toFixed(2)}</div><div class="note">الإشارة السالبة لبُعد الصورة تعني أنها تقع في جهة الجسم. القيم بوحدات افتراضية متسقة.</div>`}
